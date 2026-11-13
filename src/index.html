@@ -582,7 +582,7 @@
 
       <!-- MODAL BODY -->
       <div class="p-6 overflow-y-auto space-y-4 flex-1 text-xs text-slate-300">
-        
+
         <!-- PANEL A: SINGLE CARD AUTHORING STUDIO -->
         <div id="singleCardStudioPanel" class="space-y-4">
           <!-- ARCHETYPE BUTTON SELECTOR -->
@@ -609,92 +609,140 @@
 
           <!-- COMMON TOPIC & CITATION -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div class="md:col-span-2">
+            <div class="md:col-span-2 relative group">
               <label class="block text-[11px] font-mono uppercase text-slate-400 font-bold mb-1" id="customTopicLabel">Topic / Provision / Case Title *</label>
-              <input type="text" id="customTopicInput" placeholder="e.g. Dying Declaration or People v. Estibal" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 text-xs focus:outline-none focus:border-amber-500 font-sans" />
+              <div class="relative">
+                <input type="text" id="customTopicInput" placeholder="e.g. Dying Declaration or People v. Estibal" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 pr-8 text-slate-200 text-xs focus:outline-none focus:border-amber-500 font-sans" />
+                <button type="button" onclick="openFieldExpand('customTopicInput', 'Topic / Provision')" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-amber-400 transition text-sm">⤢</button>
+              </div>
             </div>
-            <div>
+            <div class="relative group">
               <label class="block text-[11px] font-mono uppercase text-slate-400 font-bold mb-1">Citation / Docket</label>
-              <input type="text" id="customCitationInput" placeholder="e.g. Rule 130, Sec. 38 or G.R. 208749" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 text-xs focus:outline-none focus:border-amber-500 font-mono" />
+              <div class="relative">
+                <input type="text" id="customCitationInput" placeholder="e.g. Rule 130, Sec. 38 or G.R. 208749" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 pr-8 text-slate-200 text-xs focus:outline-none focus:border-amber-500 font-mono" />
+                <button type="button" onclick="openFieldExpand('customCitationInput', 'Citation / Docket')" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-amber-400 transition text-sm">⤢</button>
+              </div>
             </div>
           </div>
 
           <!-- QUESTION CALL -->
-          <div>
+          <div class="relative group">
             <label class="block text-[11px] font-mono uppercase text-slate-400 font-bold mb-1">Recitation Question / Prompt *</label>
-            <textarea id="customQuestionPromptInput" rows="2" placeholder="e.g. Counsel, what are the four essential requisites of a dying declaration under the Rules on Evidence?" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 text-xs focus:outline-none focus:border-amber-500 resize-none font-sans leading-relaxed"></textarea>
+            <div class="relative">
+              <textarea id="customQuestionPromptInput" rows="2" placeholder="e.g. Counsel, what are the four essential requisites of a dying declaration under the Rules on Evidence?" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 pr-8 text-slate-200 text-xs focus:outline-none focus:border-amber-500 resize-none font-sans leading-relaxed"></textarea>
+              <button type="button" onclick="openFieldExpand('customQuestionPromptInput', 'Question Prompt')" class="absolute right-2 top-2 text-slate-500 hover:text-amber-400 transition text-sm">⤢</button>
+            </div>
           </div>
 
           <!-- DYNAMIC SUB-FORMS -->
           <!-- 1. CODAL FIELDS -->
           <div id="archetypeCodalFields" class="space-y-3">
-            <div>
+            <div class="relative group">
               <label class="block text-[10px] font-mono uppercase text-amber-300 font-bold mb-1">Verbatim Statutory Text / Operative Rule Summary</label>
-              <textarea id="codalRuleInput" rows="2" placeholder="State the statutory provision text..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 text-xs focus:outline-none resize-none leading-relaxed"></textarea>
+              <div class="relative">
+                <textarea id="codalRuleInput" rows="2" placeholder="State the statutory provision text..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 pr-8 text-slate-200 text-xs focus:outline-none resize-none leading-relaxed"></textarea>
+                <button type="button" onclick="openFieldExpand('codalRuleInput', 'Statutory Text')" class="absolute right-2 top-2 text-slate-500 hover:text-amber-400 transition text-sm">⤢</button>
+              </div>
             </div>
-            <div>
+            <div class="relative group">
               <label class="block text-[10px] font-mono uppercase text-emerald-400 font-bold mb-1">Essential Elements & Requisites (Numbered Enumeration)</label>
-              <textarea id="codalRequisitesInput" rows="3" placeholder="(1) That death is impending...&#10;(2) That the declarant is conscious of impending death...&#10;(3) That the declaration refers to the cause and surrounding circumstances..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 text-xs focus:outline-none resize-none font-mono leading-relaxed"></textarea>
+              <div class="relative">
+                <textarea id="codalRequisitesInput" rows="3" placeholder="(1) That death is impending...&#10;(2) That the declarant is conscious of impending death...&#10;(3) That the declaration refers to the cause and surrounding circumstances..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 pr-8 text-slate-200 text-xs focus:outline-none resize-none font-mono leading-relaxed"></textarea>
+                <button type="button" onclick="openFieldExpand('codalRequisitesInput', 'Essential Elements')" class="absolute right-2 top-2 text-slate-500 hover:text-amber-400 transition text-sm">⤢</button>
+              </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
+              <div class="relative group">
                 <label class="block text-[10px] font-mono uppercase text-amber-400 font-bold mb-1">Express Statutory Exceptions / Provisos</label>
-                <textarea id="codalStatExceptionsInput" rows="2" placeholder="(1) ..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 text-xs focus:outline-none resize-none font-mono"></textarea>
+                <div class="relative">
+                  <textarea id="codalStatExceptionsInput" rows="2" placeholder="(1) ..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 pr-8 text-slate-200 text-xs focus:outline-none resize-none font-mono"></textarea>
+                  <button type="button" onclick="openFieldExpand('codalStatExceptionsInput', 'Statutory Exceptions')" class="absolute right-2 top-2 text-slate-500 hover:text-amber-400 transition text-sm">⤢</button>
+                </div>
               </div>
-              <div>
+              <div class="relative group">
                 <label class="block text-[10px] font-mono uppercase text-sky-400 font-bold mb-1">Jurisprudential Exceptions & Doctrines</label>
-                <textarea id="codalJurisExceptionsInput" rows="2" placeholder="(1) ..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 text-xs focus:outline-none resize-none font-mono"></textarea>
+                <div class="relative">
+                  <textarea id="codalJurisExceptionsInput" rows="2" placeholder="(1) ..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 pr-8 text-slate-200 text-xs focus:outline-none resize-none font-mono"></textarea>
+                  <button type="button" onclick="openFieldExpand('codalJurisExceptionsInput', 'Jurisprudential Exceptions')" class="absolute right-2 top-2 text-slate-500 hover:text-amber-400 transition text-sm">⤢</button>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- 2. CASE FIR FIELDS -->
           <div id="archetypeCaseFields" class="space-y-3 hidden">
-            <div>
+            <div class="relative group">
               <label class="block text-[10px] font-mono uppercase text-amber-400 font-bold mb-1">Material Operative Facts & Procedural Posture</label>
-              <textarea id="caseFactsInput" rows="3" placeholder="State the material operative facts, parties, and trial history..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 text-xs focus:outline-none resize-none leading-relaxed"></textarea>
+              <div class="relative">
+                <textarea id="caseFactsInput" rows="3" placeholder="State the material operative facts, parties, and trial history..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 pr-8 text-slate-200 text-xs focus:outline-none resize-none leading-relaxed"></textarea>
+                <button type="button" onclick="openFieldExpand('caseFactsInput', 'Material Facts')" class="absolute right-2 top-2 text-slate-500 hover:text-amber-400 transition text-sm">⤢</button>
+              </div>
             </div>
-            <div>
+            <div class="relative group">
               <label class="block text-[10px] font-mono uppercase text-amber-300 font-bold mb-1">Precise Legal Issue</label>
-              <textarea id="caseIssueInput" rows="2" placeholder="Whether or not the evidence is admissible..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 text-xs focus:outline-none resize-none leading-relaxed"></textarea>
+              <div class="relative">
+                <textarea id="caseIssueInput" rows="2" placeholder="Whether or not the evidence is admissible..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 pr-8 text-slate-200 text-xs focus:outline-none resize-none leading-relaxed"></textarea>
+                <button type="button" onclick="openFieldExpand('caseIssueInput', 'Legal Issue')" class="absolute right-2 top-2 text-slate-500 hover:text-amber-400 transition text-sm">⤢</button>
+              </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
+              <div class="relative group">
                 <label class="block text-[10px] font-mono uppercase text-sky-400 font-bold mb-1">Supreme Court Ruling (Categorical)</label>
-                <textarea id="caseRulingInput" rows="2" placeholder="YES/NO. The Supreme Court held that..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 text-xs focus:outline-none resize-none leading-relaxed"></textarea>
+                <div class="relative">
+                  <textarea id="caseRulingInput" rows="2" placeholder="YES/NO. The Supreme Court held that..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 pr-8 text-slate-200 text-xs focus:outline-none resize-none leading-relaxed"></textarea>
+                  <button type="button" onclick="openFieldExpand('caseRulingInput', 'SC Ruling')" class="absolute right-2 top-2 text-slate-500 hover:text-amber-400 transition text-sm">⤢</button>
+                </div>
               </div>
-              <div>
+              <div class="relative group">
                 <label class="block text-[10px] font-mono uppercase text-emerald-400 font-bold mb-1">Controlling Ratio Decidendi & Legal Test</label>
-                <textarea id="caseRatioInput" rows="2" placeholder="The legal principle established is..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 text-xs focus:outline-none resize-none leading-relaxed"></textarea>
+                <div class="relative">
+                  <textarea id="caseRatioInput" rows="2" placeholder="The legal principle established is..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 pr-8 text-slate-200 text-xs focus:outline-none resize-none leading-relaxed"></textarea>
+                  <button type="button" onclick="openFieldExpand('caseRatioInput', 'Ratio Decidendi')" class="absolute right-2 top-2 text-slate-500 hover:text-amber-400 transition text-sm">⤢</button>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- 3. BAR ALAC HYPOTHETICAL & PROCEDURAL REMEDY -->
           <div id="archetypeAlacFields" class="space-y-2 hidden">
-            <div>
+            <div class="relative group">
               <label class="block text-[10px] font-mono uppercase text-emerald-400 font-bold mb-0.5">A - Direct Answer / Core Ruling</label>
-              <input type="text" id="alacAInput" placeholder="Yes / No / The objection must be sustained..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 text-xs focus:outline-none" />
+              <div class="relative">
+                <input type="text" id="alacAInput" placeholder="Yes / No / The objection must be sustained..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 pr-8 text-slate-200 text-xs focus:outline-none" />
+                <button type="button" onclick="openFieldExpand('alacAInput', 'ALAC: Answer')" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-amber-400 transition text-sm">⤢</button>
+              </div>
             </div>
-            <div>
+            <div class="relative group">
               <label class="block text-[10px] font-mono uppercase text-amber-400 font-bold mb-0.5">L - Legal Basis (Statute & Jurisprudence)</label>
-              <textarea id="alacLInput" rows="2" placeholder="Under Rule 130, Section... and the landmark ruling in..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 text-xs focus:outline-none resize-none"></textarea>
+              <div class="relative">
+                <textarea id="alacLInput" rows="2" placeholder="Under Rule 130, Section... and the landmark ruling in..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 pr-8 text-slate-200 text-xs focus:outline-none resize-none"></textarea>
+                <button type="button" onclick="openFieldExpand('alacLInput', 'ALAC: Legal Basis')" class="absolute right-2 top-2 text-slate-500 hover:text-amber-400 transition text-sm">⤢</button>
+              </div>
             </div>
-            <div>
+            <div class="relative group">
               <label class="block text-[10px] font-mono uppercase text-amber-300 font-bold mb-0.5">A - Factual Application to Problem</label>
-              <textarea id="alacAppInput" rows="2" placeholder="Applying the rule to the problem facts..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 text-xs focus:outline-none resize-none"></textarea>
+              <div class="relative">
+                <textarea id="alacAppInput" rows="2" placeholder="Applying the rule to the problem facts..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 pr-8 text-slate-200 text-xs focus:outline-none resize-none"></textarea>
+                <button type="button" onclick="openFieldExpand('alacAppInput', 'ALAC: Application')" class="absolute right-2 top-2 text-slate-500 hover:text-amber-400 transition text-sm">⤢</button>
+              </div>
             </div>
-            <div>
+            <div class="relative group">
               <label class="block text-[10px] font-mono uppercase text-sky-400 font-bold mb-0.5">C - Definitive Conclusion</label>
-              <input type="text" id="alacCInput" placeholder="Hence, the evidence is inadmissible." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 text-xs focus:outline-none" />
+              <div class="relative">
+                <input type="text" id="alacCInput" placeholder="Hence, the evidence is inadmissible." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 pr-8 text-slate-200 text-xs focus:outline-none" />
+                <button type="button" onclick="openFieldExpand('alacCInput', 'ALAC: Conclusion')" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-amber-400 transition text-sm">⤢</button>
+              </div>
             </div>
           </div>
 
           <!-- 4. SIMPLE FRONT & BACK -->
           <div id="archetypeSimpleFields" class="space-y-3 hidden">
-            <div>
+            <div class="relative group">
               <label class="block text-[10px] font-mono uppercase text-emerald-400 font-bold mb-1">Authoritative Model Answer / Back of Card</label>
-              <textarea id="simpleAnswerInput" rows="5" placeholder="Enter the complete model answer that will be checked during recitation..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-slate-200 text-xs focus:outline-none resize-none leading-relaxed"></textarea>
+              <div class="relative">
+                <textarea id="simpleAnswerInput" rows="5" placeholder="Enter the complete model answer that will be checked during recitation..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 pr-8 text-slate-200 text-xs focus:outline-none resize-none leading-relaxed"></textarea>
+                <button type="button" onclick="openFieldExpand('simpleAnswerInput', 'Model Answer')" class="absolute right-2 top-2 text-slate-500 hover:text-amber-400 transition text-sm">⤢</button>
+              </div>
             </div>
           </div>
         </div>
@@ -733,6 +781,31 @@
           <button type="button" onclick="closeCardCreatorModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-4 py-2 rounded-lg text-xs font-mono transition">Cancel</button>
           <button type="button" id="saveAndAddAnotherBtn" onclick="saveCustomCard(true)" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-600/60 font-bold px-4 py-2 rounded-lg text-xs font-mono transition">Save & Add Another</button>
           <button type="button" id="saveAndCloseCardBtn" onclick="saveCustomCard(false)" class="bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold px-5 py-2 rounded-lg text-xs font-mono transition shadow">Save Card</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIELD EXPAND OVERLAY -->
+  <div id="fieldExpandOverlay" class="fixed inset-0 bg-slate-950/95 z-[95] hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-amber-600/60 rounded-2xl max-w-5xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
+        <div class="flex items-center space-x-3">
+          <span class="text-amber-400 font-mono font-bold uppercase text-xs tracking-widest" id="expandFieldLabel">Field Editor</span>
+        </div>
+        <button type="button" onclick="closeFieldExpand()" class="text-slate-400 hover:text-slate-200 text-2xl leading-none">&times;</button>
+      </div>
+      <div class="p-6 flex-1 flex flex-col space-y-4 overflow-hidden">
+        <textarea id="expandFieldTextarea" class="flex-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-slate-200 text-sm focus:outline-none focus:border-amber-500 font-sans leading-relaxed resize-none" placeholder="Enter content..."></textarea>
+        <div class="flex items-center justify-between text-xs font-mono text-slate-500">
+          <div class="flex space-x-4">
+            <span>Words: <span id="expandWordCount" class="text-amber-400">0</span></span>
+            <span>Chars: <span id="expandCharCount" class="text-amber-400">0</span></span>
+          </div>
+          <div class="flex space-x-3">
+            <button type="button" onclick="closeFieldExpand()" class="px-4 py-2 text-slate-400 hover:text-slate-200 transition">Cancel</button>
+            <button type="button" onclick="applyFieldExpand()" class="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded-lg transition shadow">Apply & Close</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1186,6 +1259,14 @@
               <span class="text-amber-200/90">Randomize / Shuffle Card Order (Active Recall)</span>
             </label>
             <span class="text-[10px] text-slate-500 font-mono">0 ms instant load · Word (.doc) & Markdown (.md) Ready</span>
+          </div>
+
+          <div class="relative flex items-center space-x-2 mb-2">
+            <input id="deckLibrarySearchInput" type="text" placeholder="Filter decks by title..."
+                   class="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-amber-600 transition"
+                   oninput="renderDeckListUI()">
+            <button type="button" onclick="document.getElementById('deckLibrarySearchInput').value=''; renderDeckListUI();"
+                    class="absolute right-2 text-slate-500 hover:text-slate-300 text-lg leading-none">×</button>
           </div>
 
           <div id="deckListContainer" class="space-y-2.5 max-h-56 overflow-y-auto p-1.5 bg-slate-900/60 rounded-lg border border-slate-800">
@@ -2473,15 +2554,11 @@
     // HIGH-LEGIBILITY MICRO-FORMATTER FOR BENCHMARK BREAKDOWNS
     // ---------------------------------------------------------------------------
     function detectEnumerationFamily(para) {
-      const hasNumbers = /\(1\)\s+/.test(para) && /\(2\)\s+/.test(para);
-      const hasLetters = /\(a\)\s+/i.test(para) && /\(b\)\s+/i.test(para);
-      const hasRoman = /\(i\)\s+/i.test(para) && /\(ii\)\s+/i.test(para);
-      const startsWithMarker = /^\((?:[1-9]|10|[a-h]|i|ii|iii|iv|v)\)\s+/i.test(para.trim());
-
-      if (hasLetters) return '\\((?:[a-h])\\)';
-      if (hasNumbers) return '\\((?:[1-9]|10)\\)';
-      if (hasRoman) return '\\((?:i|ii|iii|iv|v)\\)';
-      if (startsWithMarker) return '\\((?:[1-9]|10|[a-h]|i|ii|iii|iv|v)\\)';
+      const combined = '\\((?:[1-9]|10|[a-h]|i|ii|iii|iv|v)\\)';
+      if (/\(1\)\s+/.test(para) && /\(2\)\s+/.test(para)) return combined;
+      if (/\(a\)\s+/i.test(para) && /\(b\)\s+/i.test(para)) return combined;
+      if (/\(i\)\s+/i.test(para) && /\(ii\)\s+/i.test(para)) return combined;
+      if (/^\((?:[1-9]|10|[a-h]|i|ii|iii|iv|v)\)\s+/i.test(para.trim())) return combined;
       return null;
     }
 
@@ -2565,11 +2642,14 @@
               let content = itemMatch[2].trim();
               let detachedCommentary = '';
 
-              const quoteClosingMatch = content.match(/([.;]")\s+([A-Z][A-Za-z0-9\s.,'’"()&/–—-]{15,})/s);
-              if (quoteClosingMatch) {
-                const splitIdx = quoteClosingMatch.index + quoteClosingMatch[1].length;
-                detachedCommentary = content.substring(splitIdx).trim();
-                content = content.substring(0, splitIdx).trim();
+              const boundaryMatch = content.match(/^.*?[.?!](?:\n+|\s+[A-Z][^.?!]{20,})/s);
+              if (boundaryMatch) {
+                const splitIdx = boundaryMatch[0].length;
+                const trailingText = content.substring(splitIdx).trim();
+                if (trailingText) {
+                  detachedCommentary = trailingText;
+                  content = content.substring(0, splitIdx).trim();
+                }
               }
 
               finalHtml.push(
@@ -5692,6 +5772,7 @@ function extractCardParagraphsForExport(c) {
 
     async function renderDeckListUI() {
       const decks = await dbGetAll('decks');
+      const searchQuery = document.getElementById('deckLibrarySearchInput')?.value.toLowerCase() || '';
       const container = document.getElementById('deckListContainer');
       const countBadge = document.getElementById('deckCountBadge');
       const headerBadge = document.getElementById('deckCountHeaderBadge');
@@ -5701,14 +5782,16 @@ function extractCardParagraphsForExport(c) {
       if (!container) return;
       container.innerHTML = '';
 
-      if (decks.length === 0) {
-        container.innerHTML = `<div id="emptyDecksNotice" class="text-xs text-slate-400 italic text-center py-3">No saved decks for this subject yet. Compile a new deck below or import one.</div>`;
+      const filteredDecks = decks.filter(d => d.title.toLowerCase().includes(searchQuery));
+
+      if (filteredDecks.length === 0) {
+        container.innerHTML = `<div id="emptyDecksNotice" class="text-xs text-slate-400 italic text-center py-3">${searchQuery ? 'No decks match your search.' : 'No saved decks for this subject yet. Compile a new deck below or import one.'}</div>`;
         return;
       }
 
-      decks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      filteredDecks.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-      decks.forEach(deck => {
+      filteredDecks.forEach(deck => {
         const totalCards = deck.cards ? deck.cards.length : 0;
         const activeCards = (deck.cards || []).filter(c => !c.isSuspended && !isCardBuriedToday(c)).length;
         const suspendedCards = (deck.cards || []).filter(c => c.isSuspended).length;
@@ -5793,6 +5876,51 @@ function extractCardParagraphsForExport(c) {
         container.appendChild(div);
       });
     }
+
+
+    // Field Expansion Logic
+    let activeExpandFieldId = null;
+
+    function openFieldExpand(fieldId, label) {
+      const field = document.getElementById(fieldId);
+      if (!field) return;
+      activeExpandFieldId = fieldId;
+      document.getElementById('expandFieldLabel').innerText = label;
+      const textarea = document.getElementById('expandFieldTextarea');
+      textarea.value = field.value;
+      updateExpandCounts();
+      document.getElementById('fieldExpandOverlay').classList.remove('hidden');
+      textarea.focus();
+    }
+
+    function closeFieldExpand() {
+      document.getElementById('fieldExpandOverlay').classList.add('hidden');
+      activeExpandFieldId = null;
+    }
+
+    function updateExpandCounts() {
+      const text = document.getElementById('expandFieldTextarea').value;
+      document.getElementById('expandWordCount').innerText = text.trim() ? text.trim().split(/\s+/).length : 0;
+      document.getElementById('expandCharCount').innerText = text.length;
+    }
+
+    function applyFieldExpand() {
+      const field = document.getElementById(activeExpandFieldId);
+      const text = document.getElementById('expandFieldTextarea').value;
+      if (field) {
+        field.value = text;
+        field.dispatchEvent(new Event('input', { bubbles: true }));
+        field.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      closeFieldExpand();
+    }
+
+    document.getElementById('expandFieldTextarea')?.addEventListener('input', updateExpandCounts);
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !document.getElementById('fieldExpandOverlay').classList.contains('hidden')) {
+        closeFieldExpand();
+      }
+    });
 
     async function launchSavedDeck(deckId) {
       const deck = await dbGet('decks', deckId);
@@ -7916,7 +8044,7 @@ async function getActiveCards() {
         activeDimensions: state.activeDimensions,
         metadata: meta,
         sources: sources,
-        digests: digests,
+        digests: (decks && decks.length >= 15) ? [] : digests,
         mastery: mastery,
         decks: decks
       };

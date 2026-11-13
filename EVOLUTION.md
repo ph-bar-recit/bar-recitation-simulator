@@ -3246,3 +3246,12 @@ This document chronicles the complete development history, architectural decisio
 * **Standalone Portability & Remote Webview Updates:**
   * Configured all simulators as completely self-contained single-file HTML applications incorporating Tailwind CSS and PDF.js via secure CDNs, requiring zero backend server installation or cloud configuration.
   * Maintained remote webview routing via GitHub Pages (`https://ph-bar-recit.github.io/bar-recitation-simulator/`) and Tauri GitHub Actions, ensuring that every `git push origin main` instantly propagates updates to all installed Tauri desktop and mobile client wrappers without requiring re-installations.
+## 2026-11-13: Instant Cram Multi-Batch Fixes
+- Fixed flip card broken in batches 2+ by re-binding handler on batch launch.
+- Persisted active batch checkpoint to localStorage for resume.
+- Fixed premature session termination check by comparing batch index against live array length.
+
+## 2026-11-13: Patch Edge Cases for Multi-Batch Sessions
+- Fixed desync: deleting cards in-session now correctly removes from `state.batchedSets`.
+- Fixed parity: single-deck launches now correctly initialize `state.batchedSets` for batch badge consistency.
+- Fixed checkpoint cleanup: final batch completion now removes batch checkpoints, preventing stale resume prompts.
