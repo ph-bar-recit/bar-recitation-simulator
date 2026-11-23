@@ -5600,6 +5600,11 @@ TASK: Grade the student's recitation strictly on the specific dimension asked in
         cards: compiledCards
       };
 
+      // Dedupe/mash newly compiled cards before saving so decks start clean
+      const sanitizedCompiled = compiledCards.map(sanitizeCardText);
+      const compiledMash = cardMashPass(sanitizedCompiled);
+      deckObj.cards = compiledMash.survivors;
+
       await dbSave('decks', deckObj);
       await stampSubjectModifiedTimestamp();
       await renderDeckListUI();
@@ -6063,6 +6068,144 @@ function extractCardParagraphsForExport(c) {
     let activePolishDeckId = null;
     let flaggedDuplicates = [];
 
+    // ---------------------------------------------------------------------------
+    // CARD SIMILARITY & MASHING HELPERS
+    // ---------------------------------------------------------------------------
+    const SIMILARITY_THRESHOLD = 0.72;
+    const MASH_FIELDS = ['benchmark_codal_breakdown', 'benchmark_fir', 'benchmark_alac', 'benchmark_comparative'];
+
+    function cardTokenSimilarity(a, b) {
+      const ta = (a || '').toLowerCase().replace(/[^a-z0-9]/g, ' ').split(/\s+/).filter(Boolean);
+      const tb = (b || '').toLowerCase().replace(/[^a-z0-9]/g, ' ').split(/\s+/).filter(Boolean);
+      if (ta.length === 0 || tb.length === 0) return 0;
+      const setB = new Set(tb);
+      let intersect = 0;
+      ta.forEach(t => { if (setB.has(t)) intersect++; });
+      return intersect / Math.max(ta.length, tb.length);
+    }
+
+    function cardSignature(card) {
+      const rawTopic = (card.baseTopic || card.topic || card.case_title || '').trim().toLowerCase();
+      const dimId = card.dimensionId || card.forcedDimensionId || 'general';
+      return `${rawTopic}::dim_${dimId}`;
+    }
+
+    function mergeField(a, b) {
+      if (!a) return b;
+      if (!b) return a;
+      if (typeof a === 'string' && typeof b === 'string') {
+        const aNorm = a.trim();
+        const bNorm = b.trim();
+        if (aNorm === bNorm) return aNorm;
+        if (aNorm.includes(bNorm)) return aNorm;
+        if (bNorm.includes(aNorm)) return bNorm;
+        return `${aNorm}\n\n--- MASHED ADDITION ---\n${bNorm}`;
+      }
+      if (typeof a === 'object' && typeof b === 'object' && a && b) {
+        const merged = JSON.parse(JSON.stringify(a));
+        Object.keys(b).forEach(k => {
+          if (b[k] == null) return;
+          if (MASH_FIELDS.includes(k) || k === 'codal_provision_text') {
+            merged[k] = mergeField(merged[k], b[k]);
+          } else if (!(k in merged)) {
+            merged[k] = b[k];
+          }
+        });
+        return merged;
+      }
+      return a;
+    }
+
+    function mergeCards(survivor, donor) {
+      const merged = JSON.parse(JSON.stringify(survivor));
+      const qText = mergeField(survivor.question_text || survivor.question || '', donor.question_text || donor.question || '');
+      merged.question_text = qText;
+      if (!merged.question) merged.question = qText;
+      MASH_FIELDS.forEach(f => {
+        if (donor[f] != null) {
+          merged[f] = mergeField(merged[f], donor[f]);
+        }
+      });
+      if (donor.codal_provision_text) {
+        merged.codal_provision_text = mergeField(merged.codal_provision_text, donor.codal_provision_text);
+      }
+      // Keep longest metadata; preserve status flags
+      if (donor.topic && (!merged.topic || donor.topic.length > merged.topic.length)) merged.topic = donor.topic;
+      if (donor.case_title && (!merged.case_title || donor.case_title.length > merged.case_title.length)) merged.case_title = donor.case_title;
+      if (donor.citation && (!merged.citation || donor.citation.length > merged.citation.length)) merged.citation = donor.citation;
+      if (donor.baseTopic && (!merged.baseTopic || donor.baseTopic.length > merged.baseTopic.length)) merged.baseTopic = donor.baseTopic;
+      if (donor.rule_citation && (!merged.rule_citation || donor.rule_citation.length > merged.rule_citation.length)) merged.rule_citation = donor.rule_citation;
+      if (donor.exportTag && !merged.exportTag) merged.exportTag = donor.exportTag;
+      if (donor.dimensionId && !merged.dimensionId) merged.dimensionId = donor.dimensionId;
+      if (donor.forcedDimensionId && !merged.forcedDimensionId) merged.forcedDimensionId = donor.forcedDimensionId;
+      if (donor.schemaType && !merged.schemaType) merged.schemaType = donor.schemaType;
+      if (donor.isSuspended) merged.isSuspended = true;
+      if (donor.buriedUntil && (!merged.buriedUntil || donor.buriedUntil > merged.buriedUntil)) merged.buriedUntil = donor.buriedUntil;
+      if (donor.isGrounded) merged.isGrounded = true;
+      if (Array.isArray(donor.tags) && donor.tags.length) {
+        merged.tags = Array.from(new Set([...(merged.tags || []), ...donor.tags]));
+      }
+      if (!merged.mashedFrom) merged.mashedFrom = [];
+      if (survivor.mashedFrom) merged.mashedFrom.push(...survivor.mashedFrom);
+      if (donor.mashedFrom) merged.mashedFrom.push(...donor.mashedFrom);
+      else merged.mashedFrom.push({ index: donor._origIndex, reason: donor._mashReason || 'similar' });
+      merged._mashCount = (merged._mashCount || 1) + 1;
+      return merged;
+    }
+
+    function cardMashPass(cards, threshold = SIMILARITY_THRESHOLD) {
+      const survivors = [];
+      const mashed = [];
+      const seenSigs = new Map();
+      const refreshSigPointers = (merged) => {
+        for (const [k, v] of seenSigs) {
+          if (v === merged._preMergeRef) seenSigs.set(k, merged);
+        }
+      };
+      cards.forEach((card, idx) => {
+        card._origIndex = idx;
+        const sig = cardSignature(card);
+        const promptText = card.question_text || card.question || '';
+        let matched = null;
+        let matchedSig = null;
+        if (seenSigs.has(sig)) {
+          matched = seenSigs.get(sig);
+          matchedSig = sig;
+        } else {
+          for (const [otherSig, cand] of seenSigs) {
+            if (cardTokenSimilarity(promptText, cand.question_text || cand.question || '') >= threshold) {
+              matched = cand;
+              matchedSig = otherSig;
+              break;
+            }
+          }
+        }
+        if (matched) {
+          const reason = matched._origIndex === idx ? 'duplicate' : 'overly similar';
+          card._mashReason = reason;
+          const merged = mergeCards(matched, card);
+          merged._mashReason = reason;
+          merged._preMergeRef = matched;
+          const pos = survivors.indexOf(matched);
+          if (pos >= 0) survivors[pos] = merged;
+          else survivors.push(merged);
+          seenSigs.set(sig, merged);
+          refreshSigPointers(merged);
+          mashed.push({ index: idx, survivorIndex: pos >= 0 ? pos : survivors.length - 1, reason });
+        } else {
+          seenSigs.set(sig, card);
+          survivors.push(card);
+        }
+      });
+      return { survivors, mashed };
+    }
+
+    function sanitizeCardText(card) {
+      if (card.question_text) card.question_text = sanitizeQuestionPrompt(card.question_text);
+      if (card.question) card.question = sanitizeQuestionPrompt(card.question);
+      return card;
+    }
+
     window.openDeckRegenerateModal = function(deckId) {
       openDeckPolishModal(deckId);
     };
@@ -6159,33 +6302,12 @@ function extractCardParagraphsForExport(c) {
       if (!deck || !deck.cards) return;
 
       const initialCount = deck.cards.length;
-      const seenSignatures = new Set();
-      const uniqueCleanedCards = [];
+      const sanitizedCards = deck.cards.map(sanitizeCardText);
 
-      deck.cards.forEach((card) => {
-        // Sanitize card text and prompts during the polish pass
-        if (card.question_text) {
-          card.question_text = sanitizeQuestionPrompt(card.question_text);
-        }
-        if (card.question) {
-          card.question = sanitizeQuestionPrompt(card.question);
-        }
-
-        const rawTopic = (card.baseTopic || card.topic || card.case_title || '').trim().toLowerCase();
-        const dimId = card.dimensionId || card.forcedDimensionId || 'general';
-        const cleanPrompt = (card.question_text || card.question || '')
-          .toLowerCase()
-          .replace(/[^a-z0-9]/g, '');
-
-        const topicDimSig = `${rawTopic}::dim_${dimId}`;
-        const promptSig = cleanPrompt.length > 25 ? cleanPrompt.substring(0, 90) : topicDimSig;
-
-        if (!seenSignatures.has(topicDimSig) && (!cleanPrompt.length || !seenSignatures.has(promptSig))) {
-          seenSignatures.add(topicDimSig);
-          if (cleanPrompt.length > 25) seenSignatures.add(promptSig);
-          uniqueCleanedCards.push(card);
-        }
-      });
+      // Mash duplicate/overly similar cards into one instead of dropping unique notes
+      const mashResult = cardMashPass(sanitizedCards);
+      const uniqueCleanedCards = mashResult.survivors;
+      const mashedCount = mashResult.mashed.length;
 
       const removedCount = initialCount - uniqueCleanedCards.length;
       deck.cards = uniqueCleanedCards;
@@ -6207,7 +6329,8 @@ function extractCardParagraphsForExport(c) {
       }
 
       closeDeckPolishModal();
-      alert(`✅ Deck Polish Complete!\n\nRemoved ${removedCount} redundant card(s).\nDeck now contains ${uniqueCleanedCards.length} high-yield unique cards.`);
+      const mashNote = mashedCount > 0 ? `\n🧬 ${mashedCount} duplicate/similar card(s) mashed into survivors.` : '';
+      alert(`✅ Deck Polish Complete!\n\nRemoved ${removedCount} redundant card(s).\nDeck now contains ${uniqueCleanedCards.length} high-yield unique cards.${mashNote}`);
     }
     function closeCardCreatorModal() {
       document.getElementById('cardCreatorModal')?.classList.add('hidden');
@@ -10438,6 +10561,13 @@ async function saveCustomCard(addAnother = false) {
           <input type="checkbox" id="regenStripBoilerplateCheck" checked class="rounded bg-slate-950 border-slate-700 text-purple-500 focus:ring-0">
           <span>Strip Low-Value Boilerplate (Effectivity & Short Titles)</span>
         </label>
+        <label class="flex items-center space-x-2 text-slate-300 cursor-pointer">
+          <input type="checkbox" id="regenMashDuplicatesCheck" checked class="rounded bg-slate-950 border-slate-700 text-purple-500 focus:ring-0">
+          <span>Mash Duplicate &amp; Overly Similar Cards into One</span>
+        </label>
+        <div class="pl-7 text-[10px] text-slate-500 leading-snug -mt-1 pb-1">
+          Merges duplicate/near-duplicate cards (docket/section/topic + dimension, or token/prompt similarity ≥ 0.72) into a single card instead of dropping unique notes. Keeps longest metadata and status flags.
+        </label>
       </div>
     </div>
 
@@ -10553,6 +10683,7 @@ async function saveCustomCard(addAnother = false) {
     const newPreset = document.getElementById('regenNewPresetSelect')?.value || 'ALL';
     const addCloze = document.getElementById('regenAddClozeCheck')?.checked;
     const stripBoilerplate = document.getElementById('regenStripBoilerplateCheck')?.checked;
+    const mashDuplicates = document.getElementById('regenMashDuplicatesCheck')?.checked;
     const targetCountVal = document.getElementById('regenTargetCountSelect')?.value || 'ORIGINAL';
 
     closeDeckRegenerateModal();
@@ -10626,12 +10757,24 @@ async function saveCustomCard(addAnother = false) {
       deck.title = `${deck.title.replace(/\s*\(Polished[^\)]*\)/gi, '')} (Polished · ${polishedCards.length} Cards)`;
       deck.presetTag = strategy === 'MODIFY' ? PRESET_PROFILES[newPreset].name : deck.presetTag;
 
+      // Mash duplicate/overly similar cards into one before saving
+      let mashReport = '';
+      if (mashDuplicates) {
+        const preCount = deck.cards.length;
+        const sanitized = deck.cards.map(sanitizeCardText);
+        const mashResult = cardMashPass(sanitized);
+        deck.cards = mashResult.survivors;
+        if (mashResult.mashed.length > 0) {
+          mashReport = `\n\n🧬 ${mashResult.mashed.length} duplicate/similar card(s) mashed into ${mashResult.survivors.length} card(s).`;
+        }
+      }
+
       await dbSave('decks', deck);
       await stampSubjectModifiedTimestamp();
       await renderDeckListUI();
       hideCompileModal();
 
-      alert(`✨ Successfully polished "${deck.title}" (${polishedCards.length} cards updated)!`);
+      alert(`✨ Successfully polished "${deck.title}" (${polishedCards.length} cards updated)!${mashReport}`);
     } catch (err) {
       hideCompileModal();
       alert("Regeneration failed: " + err.message);

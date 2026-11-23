@@ -3255,3 +3255,10 @@ This document chronicles the complete development history, architectural decisio
 - Fixed desync: deleting cards in-session now correctly removes from `state.batchedSets`.
 - Fixed parity: single-deck launches now correctly initialize `state.batchedSets` for batch badge consistency.
 - Fixed checkpoint cleanup: final batch completion now removes batch checkpoints, preventing stale resume prompts.
+
+## 2026-11-23 — Deck Polish & Dedupe: Mash Instead of Drop
+- Added `SIMILARITY_THRESHOLD = 0.72` constant and card similarity/mashing helpers (`cardTokenSimilarity`, `cardSignature`, `mergeField`, `mergeCards`, `cardMashPass`, `sanitizeCardText`) near `openDeckPolishModal`.
+- `executeDeckDeduplication` now runs `cardMashPass` over sanitized cards: duplicate/overly-similar cards merge non-overlapping notes (`benchmark_codal_breakdown`, `benchmark_fir`, `benchmark_alac`, `benchmark_comparative`, prompt text) into the surviving card instead of dropping unique notes. Longest metadata and status flags (`isSuspended`, `buriedUntil`) preserved.
+- `executeDeckRegeneration` gained a "Mash Duplicate & Overly Similar Cards into One" checkbox (checked by default) in the Regenerate & Polish modal; mashing runs before save and reports count in the completion alert.
+- `startBatchCompilationFromScope` runs `cardMashPass` on `compiledCards` right before `dbSave('decks', deckObj)` so newly compiled decks start deduplicated.
+- Syntax check: all 4 `<script>` blocks pass `node --check` (zero SyntaxErrors).
