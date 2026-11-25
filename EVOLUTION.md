@@ -7,6 +7,7 @@ This document chronicles the complete development history, architectural decisio
 
 ### Bug Fixes & Engine Corrections
 
+  * **(polish)** Raise SIMILARITY_THRESHOLD from 0.72 to 0.85; add section/article collision prevention in cardSignature; require 0.88 prompt similarity for bar hypotheticals (dimension 9, ALAC schema, trial/dim fact patterns); strip legacy "--- MASHED ADDITION ---" markers in sanitizeCardText; replace masher delimiter with clean double newline in mergeField.
 * **(tour)** Eliminate page reload on subject selector during guided walkthrough ([328a1d0](https://github.com/ph-bar-recit/bar-recitation-simulator/commit/328a1d085950df35f20c1e66bad464ce754a46f2))
 
 * **(changelog)** Prevent null timestamp error in git-cliff template ([0ebf1f4](https://github.com/ph-bar-recit/bar-recitation-simulator/commit/0ebf1f43b708360c9d906d1addc1bb8d47b948ac))

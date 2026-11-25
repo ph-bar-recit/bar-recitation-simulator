@@ -6071,8 +6071,14 @@ function extractCardParagraphsForExport(c) {
     // ---------------------------------------------------------------------------
     // CARD SIMILARITY & MASHING HELPERS
     // ---------------------------------------------------------------------------
-    const SIMILARITY_THRESHOLD = 0.72;
+    const SIMILARITY_THRESHOLD = 0.85;
     const MASH_FIELDS = ['benchmark_codal_breakdown', 'benchmark_fir', 'benchmark_alac', 'benchmark_comparative'];
+
+    function extractSectionNumber(text) {
+      if (!text) return null;
+      const match = text.match(/(?:Section|Sec\.|Article|Art\.)\s*\d+/i);
+      return match ? match[0].toLowerCase() : null;
+    }
 
     function cardTokenSimilarity(a, b) {
       const ta = (a || '').toLowerCase().replace(/[^a-z0-9]/g, ' ').split(/\s+/).filter(Boolean);
@@ -6087,7 +6093,8 @@ function extractCardParagraphsForExport(c) {
     function cardSignature(card) {
       const rawTopic = (card.baseTopic || card.topic || card.case_title || '').trim().toLowerCase();
       const dimId = card.dimensionId || card.forcedDimensionId || 'general';
-      return `${rawTopic}::dim_${dimId}`;
+      const sec = extractSectionNumber(rawTopic);
+      return `${rawTopic}::dim_${dimId}${sec ? `::sec_${sec.replace(/\s/g, '_')}` : ''}`;
     }
 
     function mergeField(a, b) {
@@ -6099,7 +6106,7 @@ function extractCardParagraphsForExport(c) {
         if (aNorm === bNorm) return aNorm;
         if (aNorm.includes(bNorm)) return aNorm;
         if (bNorm.includes(aNorm)) return bNorm;
-        return `${aNorm}\n\n--- MASHED ADDITION ---\n${bNorm}`;
+        return `${aNorm}\n\n${bNorm}`;
       }
       if (typeof a === 'object' && typeof b === 'object' && a && b) {
         const merged = JSON.parse(JSON.stringify(a));
@@ -6162,6 +6169,23 @@ function extractCardParagraphsForExport(c) {
           if (v === merged._preMergeRef) seenSigs.set(k, merged);
         }
       };
+      const isBarHypothetical = (card) => {
+        const dimId = card.dimensionId || card.forcedDimensionId || 'general';
+        if (dimId === 9) return true;
+        if (card.schemaType === 'ALAC') return true;
+        const prompt = (card.question_text || card.question || '').trim();
+        const lowerPrompt = prompt.toLowerCase();
+        return lowerPrompt.startsWith('during the trial') ||
+               lowerPrompt.startsWith('a filed') ||
+               lowerPrompt.startsWith('suppose') ||
+               lowerPrompt.startsWith('x and y');
+      };
+      const sectionsMatch = (a, b) => {
+        const secA = extractSectionNumber(a.baseTopic || a.topic || a.case_title || '');
+        const secB = extractSectionNumber(b.baseTopic || b.topic || b.case_title || '');
+        if (secA && secB) return secA === secB;
+        return true;
+      };
       cards.forEach((card, idx) => {
         card._origIndex = idx;
         const sig = cardSignature(card);
@@ -6173,7 +6197,16 @@ function extractCardParagraphsForExport(c) {
           matchedSig = sig;
         } else {
           for (const [otherSig, cand] of seenSigs) {
-            if (cardTokenSimilarity(promptText, cand.question_text || cand.question || '') >= threshold) {
+            if (!sectionsMatch(card, cand)) {
+              continue;
+            }
+            if (isBarHypothetical(card) || isBarHypothetical(cand)) {
+              if (cardTokenSimilarity(promptText, cand.question_text || cand.question || '') >= 0.88) {
+                matched = cand;
+                matchedSig = otherSig;
+                break;
+              }
+            } else if (cardTokenSimilarity(promptText, cand.question_text || cand.question || '') >= threshold) {
               matched = cand;
               matchedSig = otherSig;
               break;
@@ -6201,8 +6234,8 @@ function extractCardParagraphsForExport(c) {
     }
 
     function sanitizeCardText(card) {
-      if (card.question_text) card.question_text = sanitizeQuestionPrompt(card.question_text);
-      if (card.question) card.question = sanitizeQuestionPrompt(card.question);
+      if (card.question_text) card.question_text = sanitizeQuestionPrompt(card.question_text).replace(/--- MASHED ADDITION ---\n\n/g, '\n\n');
+      if (card.question) card.question = sanitizeQuestionPrompt(card.question).replace(/--- MASHED ADDITION ---\n\n/g, '\n\n');
       return card;
     }
 
