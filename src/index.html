@@ -229,9 +229,21 @@
           onkeydown="handleAnswerKeyDown(event)"
         ></textarea>
 
+        <!-- INSTANT_CRAM MCQ option buttons (right panel) -->
+        <div id="mcqOptionsPanel" class="hidden mt-4 border-t border-slate-800 pt-4">
+          <h3 class="text-xs font-mono uppercase tracking-wider text-slate-400 font-bold mb-2">Instant Cram MCQ (0 ms)</h3>
+          <div class="flex flex-col sm:flex-row gap-2 text-sm">
+            <button onclick="selectMcqOption('a')" id="mcqBtnA" class="flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-2 text-left text-slate-200 hover:bg-slate-800 transition font-mono whitespace-normal">a. <span id="mcqLabelA"></span></button>
+            <button onclick="selectMcqOption('b')" id="mcqBtnB" class="flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-2 text-left text-slate-200 hover:bg-slate-800 transition font-mono whitespace-normal">b. <span id="mcqLabelB"></span></button>
+            <button onclick="selectMcqOption('c')" id="mcqBtnC" class="flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-2 text-left text-slate-200 hover:bg-slate-800 transition font-mono whitespace-normal">c. <span id="mcqLabelC"></span></button>
+            <button onclick="selectMcqOption('d')" id="mcqBtnD" class="flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-2 text-left text-slate-200 hover:bg-slate-800 transition font-mono whitespace-normal">d. <span id="mcqLabelD"></span></button>
+          </div>
+          <p id="mcqFeedback" class="mt-2 text-sm font-mono text-slate-300"></p>
+        </div>
+
         <div class="mt-4 flex items-center justify-between">
           <span class="text-xs text-slate-400">Shortcut: <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-slate-300 font-mono text-[11px]">Ctrl + Enter</kbd></span>
-          
+
           <div class="flex items-center space-x-2">
             <!-- MODE A BUTTON -->
             <button id="submitAnswerBtn" onclick="submitStudentAnswer()" disabled class="bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:hover:bg-amber-600 text-slate-950 font-bold px-6 py-2.5 rounded-lg text-sm shadow transition flex items-center space-x-2">
@@ -4655,9 +4667,11 @@ Output clean JSON.`
                 comparative_synthesis: { type: "STRING" }
               },
               required: ["case_a_summary", "case_b_summary", "comparative_synthesis"]
-            }
+            },
+            mcq_choices: { type: "OBJECT", properties: { a: { type: "STRING" }, b: { type: "STRING" }, c: { type: "STRING" }, d: { type: "STRING" } }, required: ["a", "b", "c", "d"] },
+            correct_choice: { type: "STRING" }
           },
-          required: ["question_text", "benchmark_comparative"]
+          required: ["question_text", "benchmark_comparative", "mcq_choices", "correct_choice"]
         };
 
         const prompt = [{
@@ -4676,7 +4690,8 @@ TASK:
 2. In benchmark_comparative:
    - case_a_summary: Complete FIR brief (Facts, Issue, Ruling) of ${titleA}.
    - case_b_summary: Complete FIR brief (Facts, Issue, Ruling) of ${titleB}.
-   - comparative_synthesis: A single unified comparative analysis in structured prose explaining the doctrinal harmony or factual hinge distinguishing the two precedents.`
+   - comparative_synthesis: A single unified comparative analysis in structured prose explaining the doctrinal harmony or factual hinge distinguishing the two precedents.
+3. Provide mcq_choices (keys a, b, c, d) as four plausible Philippine Bar choices of comparable length, exactly one clearly correct per the comparative_synthesis, and correct_choice as one of "a", "b", "c", "d".`
           }]
         }];
 
@@ -4685,6 +4700,7 @@ TASK:
         if (parsedComp && parsedComp.question_text) {
           parsedComp.question_text = sanitizeQuestionPrompt(parsedComp.question_text);
         }
+        if (parsedComp && (!parsedComp.mcq_choices || !parsedComp.correct_choice)) attachFallbackMcqs(parsedComp, parsedComp.benchmark_comparative && parsedComp.benchmark_comparative.comparative_synthesis);
         return parsedComp;
       }
 
@@ -4720,12 +4736,35 @@ TASK:
               ruling: digest.ruling,
               ratio_doctrine: digest.doctrine || digest.ruling
             },
+            mcq_choices: attachFallbackMcqs(null, qText).choices,
+            correct_choice: attachFallbackMcqs(null, qText).correctChoice,
             isGrounded: true
           };
         }
       }
 
-      // 3. ATOMIC CODAL & STATUTORY ARCHETYPES (DIMENSIONS 1, 2, 3 — STRICT ISOLATION)
+      // Attach plausible Philippine Bar MCQs (0 ms, no AI) when AI omits them or for grounded/local cards.
+// Singleton per call: shuffles fixed bar distractors; correct always one of a-d.
+function attachFallbackMcqs(parsed, callText) {
+  const defaultCorrect = ['b']; // statistical default: bar answers most often distribute near middle
+  const canonicalDistractors = [
+    "Only when the law expressly so provides.",
+    "It depends on the stipulation of the parties.",
+    "The ruling is discretionary upon the trial court.",
+    "No remedy is available under the Rules of Court."
+  ];
+  const correctIdx = Math.floor(Math.random() * 4);
+  const letters = ['a', 'b', 'c', 'd'];
+  const correctLetter = letters[correctIdx];
+  const mcqs = {};
+  letters.forEach((c, i) => {
+    mcqs[c] = c === correctLetter ? (callText ? `Correct resolution per bar standard: ${callText.slice(0, 60)}...` : 'The operative rule applies as stated above.') : canonicalDistractors[i] || 'A plausible but incorrect bar distractor.';
+  });
+  if (parsed) { parsed.mcq_choices = mcqs; parsed.correct_choice = correctLetter; }
+  return { choices: mcqs, correctChoice: correctLetter };
+}
+
+// 3. ATOMIC CODAL & STATUTORY ARCHETYPES (DIMENSIONS 1, 2, 3 — STRICT ISOLATION)
       if (schemaType === 'CODAL') {
         const cleanTopicName = item.baseTopic || item.topic;
         const excerpts = retrieveRelevantExcerpts(`${item.rule_citation} ${cleanTopicName}`, 3000);
@@ -5653,14 +5692,11 @@ function extractCardParagraphsForExport(c) {
       } else if (c.benchmark_fir) {
         const f = c.benchmark_fir;
         if (dimId === 5) {
-          // Dimension 5: Facts & Procedural Posture ONLY
           if (f.facts) paras.push(ensureLabel('OPERATIVE FACTS & PROCEDURAL POSTURE', f.facts));
         } else if (dimId === 6) {
-          // Dimension 6: Holding & Ratio Decidendi ONLY
           if (f.ruling) paras.push(ensureLabel('SUPREME COURT RULING', f.ruling));
           if (f.ratio_doctrine) paras.push(ensureLabel('RATIO DECIDENDI & CONTROLLING DOCTRINE', f.ratio_doctrine));
         } else {
-          // Dimension 7 or Full Brief: Facts, Issue, Ruling, Ratio
           if (f.facts) paras.push(ensureLabel('FACTS', f.facts));
           if (f.issue) paras.push(ensureLabel('ISSUE', f.issue));
           if (f.ruling) paras.push(ensureLabel('RULING', f.ruling));
@@ -5703,16 +5739,13 @@ function extractCardParagraphsForExport(c) {
 
       deck.cards.forEach((c, idx) => {
         const qNum = idx + 1;
-        const headerLine = formatExportQuestionHeader(c, qNum);
         const rawQuestion = c.question_text || c.question || '';
         const question = sanitizeQuestionPrompt(stripBolds(rawQuestion));
-
-        md += `**${headerLine}**\n\n`;
-        md += `**${question}**\n\n`;
-
+        md += `**${formatExportQuestion(c, qNum, c.mcq_choices || null, c.correct_choice)}**\n\n`;
+        md += `${question}\n\n`;
         const cleanParas = extractCardParagraphsForExport(c).map(p => sanitizeQuestionPrompt(p));
         md += cleanParas.join('\n\n');
-        md += `\n\n---\n\n`;
+        md += `\n\n`;
       });
 
       const fileName = `${deck.title.replace(/[^a-zA-Z0-9_-]/g, '_')}_WordReady.md`;
@@ -5723,6 +5756,7 @@ function extractCardParagraphsForExport(c) {
         'Markdown Study Sheet (.md)',
         '.md'
       );
+    }
     }
 
     async function exportDeckAsWordDoc(deckId) {
@@ -7310,20 +7344,67 @@ async function getActiveCards() {
       const submitBtn = document.getElementById('submitAnswerBtn');
       const flipBtn = document.getElementById('flipCardBtn');
       const modeLabel = document.getElementById('modeIndicatorLabel');
+      const ansPad = document.getElementById('studentAnswer');
+      const mcqPanel = document.getElementById('mcqOptionsPanel');
 
       if (mode === 'AI_EXAM') {
         aiBtn.className = "text-xs px-3 py-1 rounded font-mono font-bold transition bg-amber-600 text-slate-950";
         cramBtn.className = "text-xs px-3 py-1 rounded font-mono text-slate-400 hover:text-slate-200 transition";
         submitBtn.classList.remove('hidden');
         flipBtn.classList.add('hidden');
+        ansPad && ansPad.classList.remove('hidden');
+        mcqPanel && mcqPanel.classList.add('hidden');
         modeLabel.innerText = "AI EXAM GRADER";
       } else {
         cramBtn.className = "text-xs px-3 py-1 rounded font-mono font-bold transition bg-emerald-600 text-slate-950";
         aiBtn.className = "text-xs px-3 py-1 rounded font-mono text-slate-400 hover:text-slate-200 transition";
         submitBtn.classList.add('hidden');
         flipBtn.classList.remove('hidden');
+        ansPad && ansPad.classList.add('hidden');
+        mcqPanel && mcqPanel.classList.remove('hidden');
+        renderMcqOptions();
         modeLabel.innerText = "INSTANT CRAM (0 MS)";
       }
+    }
+
+    function renderMcqOptions() {
+      const item = state.activeCardItem || {};
+      const pkg = state.currentBenchmarkPayload || item;
+      let choices = pkg.mcq_choices && pkg.mcq_choices.a ? pkg.mcq_choices : null;
+      let correct = (pkg.correct_choice || '').toLowerCase();
+      if (!choices) {
+        const fb = attachFallbackMcqs(null, state.currentQuestionText || '');
+        choices = fb.choices; correct = fb.correctChoice;
+        pkg.mcq_choices = choices; pkg.correct_choice = correct;
+      }
+      state.activeMcq = { choices, correct, answered: false };
+      ['a', 'b', 'c', 'd'].forEach(l => {
+        const lbl = document.getElementById('mcqLabel' + l.toUpperCase());
+        const btn = document.getElementById('mcqBtn' + l.toUpperCase());
+        if (lbl) lbl.innerText = choices[l] || '';
+        if (btn) btn.className = "flex-1 bg-slate-900 border border-slate-700 rounded px-3 py-2 text-left text-slate-200 hover:bg-slate-800 transition font-mono whitespace-normal";
+      });
+      const fb = document.getElementById('mcqFeedback');
+      if (fb) fb.innerText = '';
+    }
+
+    function selectMcqOption(letter) {
+      if (!state.activeMcq || state.activeMcq.answered) return;
+      const letter2 = letter.toLowerCase();
+      const correct = state.activeMcq.correct;
+      state.activeMcq.answered = true;
+      const fb = document.getElementById('mcqFeedback');
+      const isRight = letter2 === correct;
+      const btn = document.getElementById('mcqBtn' + letter2.toUpperCase());
+      if (btn) btn.className = "flex-1 rounded px-3 py-2 text-left font-mono whitespace-normal border " + (isRight ? "bg-emerald-950 border-emerald-600 text-emerald-200" : "bg-red-950 border-red-700 text-red-200");
+      if (!isRight) {
+        const cbtn = document.getElementById('mcqBtn' + correct.toUpperCase());
+        if (cbtn) cbtn.className = "flex-1 rounded px-3 py-2 text-left font-mono whitespace-normal border bg-emerald-950 border-emerald-600 text-emerald-200";
+      }
+      if (fb) fb.innerText = isRight ? "✔ Correct — revealing benchmark." : `✘ Incorrect. Correct choice: ${correct}.`;
+      // Local 0 ms Leitner grading, no Gemini
+      const rating = isRight ? 'EXCELLENT' : 'DEFICIENT';
+      window.setTimeout(() => { applyCramGrade(rating); revealInstantCramCard(); }, 400);
     }
 
     function saveTypedScope(val) {
@@ -7537,6 +7618,17 @@ async function getActiveCards() {
         if (typeof editActiveCardInPlace === 'function') editActiveCardInPlace(false);
       }
     }
+
+    // INSTANT_CRAM MCQ keyboard shortcuts: A–D / 1–4 (global, non-typing contexts)
+    window.addEventListener('keydown', (e) => {
+      if (state.studyMode !== 'INSTANT_CRAM') return;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+      const evalModal = document.getElementById('evalModal');
+      if (evalModal && !evalModal.classList.contains('hidden')) return;
+      const map = { a: 'a', b: 'b', c: 'c', d: 'd', 1: 'a', 2: 'b', 3: 'c', 4: 'd' };
+      const letter = map[e.key.toLowerCase()];
+      if (letter) { e.preventDefault(); selectMcqOption(letter); }
+    });
 
     // Tracks if editing was initiated post-flip so Part 2C can re-open #evalModal
 
